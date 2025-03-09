@@ -3,7 +3,43 @@ import numpy as np
 
 class TradeStrategy:
     """
-    This class implements a trading strategy with dynamic stop-loss and take-profit levels.
+        Attributes:
+            df (pd.DataFrame): DataFrame containing trading data.
+            reward_risk_ratio (float): Ratio of reward to risk (e.g., 2 means TP = 2 * SL).
+
+        Methods:
+            __init__(df: pd.DataFrame, reward_risk_ratio: float = 2.0):
+                Initializes the TradeStrategy with trading data and reward-risk ratio.
+
+            _calculate_dynamic_multipliers(atr, rsi, bollinger_percent_b):
+                Computes dynamic multipliers based on volatility (ATR), RSI, and Bollinger Bands.
+
+            _calculate_stop_loss_take_profit(indicator_df: pd.DataFrame):
+                Computes stop-loss and take-profit levels using dynamic multipliers.
+
+            run(indicator_df: pd.DataFrame):
+                Executes stop-loss and take-profit calculation.
+
+
+            :param df: DataFrame containing trading data.
+            :param reward_risk_ratio: Ratio of reward to risk (e.g., 2 means TP = 2 * SL).
+            pass
+
+
+            :param atr: Average True Range values.
+            :param rsi: Relative Strength Index values.
+            :param bollinger_percent_b: Bollinger Bands %B values.
+            :return: Tuple containing stop-loss and take-profit multipliers.
+            pass
+
+
+            :param indicator_df: DataFrame containing indicator values (ATR, RSI, Bollinger Bands).
+            pass
+
+            Executes stop-loss and take-profit calculation.
+
+            :param indicator_df: DataFrame containing indicator values (ATR, RSI, Bollinger Bands).
+            pass
     """
 
     def __init__(self, df: pd.DataFrame, reward_risk_ratio: float = 2.0):
@@ -59,27 +95,3 @@ class TradeStrategy:
     def run(self, indicator_df: pd.DataFrame):
         """Executes stop-loss and take-profit calculation."""
         self._calculate_stop_loss_take_profit(indicator_df)
-
-    # def backtesting(self, real_df: pd.DataFrame, capital: float, risk_per_trade: float = 0.01) -> pd.DataFrame:
-    #     """
-    #     Perform backtesting using historical price data.
-    #     """
-    #     backtest_df = real_df.merge(self.df, left_index=True, right_index=True)
-    #     trade_risk = risk_per_trade * capital
-
-    #     wins = ((backtest_df["POSITION"] == "BUY") & (backtest_df["HIGH"] >= backtest_df["TAKE_PROFIT"])) | \
-    #            ((backtest_df["POSITION"] == "SELL") & (backtest_df["LOW"] <= backtest_df["TAKE_PROFIT"]))
-
-    #     losses = ((backtest_df["POSITION"] == "BUY") & (backtest_df["LOW"] <= backtest_df["STOP_LOSS"])) | \
-    #              ((backtest_df["POSITION"] == "SELL") & (backtest_df["HIGH"] >= backtest_df["STOP_LOSS"]))
-
-    #     win_trades = wins.sum()
-    #     loss_trades = losses.sum()
-        
-    #     capital += win_trades * (trade_risk * self.reward_risk_ratio) - loss_trades * trade_risk
-
-    #     print(f"Final Capital : {capital:.2f}")
-    #     print(f"Win trades : {win_trades}, Loss trades : {loss_trades}")
-    #     print(f"Success rate : {win_trades / max(1, (win_trades + loss_trades)) * 100:.2f}%")
-
-    #     return backtest_df
