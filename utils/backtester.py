@@ -51,9 +51,9 @@ class Backtester:
         total_trades = len(results)
         winning_trades = results[results > 0].count()
         losing_trades = results[results <= 0].count()
-        win_rate = round(winning_trades / total_trades, 2)
-        net_profit = round(results.sum(), 2)
-        average_profit = round(results.mean(), 2)
+        win_rate = winning_trades / total_trades
+        net_profit = results.sum()
+        average_profit = results.mean()
         sharpe_ratio = self.calculate_sharpe_ratio(results)
 
         performance_metrics = {
@@ -67,10 +67,10 @@ class Backtester:
         }
         return performance_metrics
 
-    def calculate_sharpe_ratio(self, returns:pd.Series, risk_free_rate:float=0.0) -> float:
+    def calculate_sharpe_ratio(self, returns:pd.Series, risk_free_rate:float=0.0):
         """
         Calculate the Sharpe ratio.
         """
         excess_returns = returns - risk_free_rate
         sharpe_ratio = excess_returns.mean() / excess_returns.std()
-        return round(sharpe_ratio, 2)
+        return sharpe_ratio

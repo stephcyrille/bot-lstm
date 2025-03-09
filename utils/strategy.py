@@ -53,12 +53,13 @@ class TradeStrategy:
         self.reward_risk_ratio = reward_risk_ratio
         self.df["POSITION"] = np.where(self.df["PREDICTED_CLOSE"] > self.df["ENTRY_PRICE"], "BUY", "SELL")
 
-    def _calculate_dynamic_multipliers(self, atr, rsi, bollinger_percent_b):
+    def _calculate_dynamic_multipliers(self, atr, rsi, bollinger_percent_b, macd, signal_line):
         """
-        Compute dynamic multipliers based on volatility (ATR), RSI, and Bollinger Bands.
+        Compute dynamic multipliers based on volatility (ATR), RSI, Bollinger Bands, MACD, and Signal Line.
         """
+        
         stop_loss_multiplier = np.where(atr > 0.002, 1.5 * 1.2, 1.5)
-        take_profit_multiplier = stop_loss_multiplier * self.reward_risk_ratio  # Ajustement avec le ratio
+        take_profit_multiplier = stop_loss_multiplier * (self.reward_risk_ratio)  # Ajustement avec le ratio
 
         # RSI adjustments
         stop_loss_multiplier *= np.where(rsi < 30, 1.2, 1)
@@ -68,6 +69,10 @@ class TradeStrategy:
         stop_loss_multiplier *= np.where(bollinger_percent_b < 0.2, 1.2, 1)
         take_profit_multiplier *= np.where(bollinger_percent_b > 0.8, 0.8, 1)
 
+        # MACD adjustments
+        stop_loss_multiplier *= np.where(macd > signal_line, 1.2, 1)
+        take_profit_multiplier *= np.where(macd < signal_line, 0.8, 1)
+
         return stop_loss_multiplier, take_profit_multiplier
 
     def _calculate_stop_loss_take_profit(self, indicator_df: pd.DataFrame):
@@ -76,7 +81,9 @@ class TradeStrategy:
         """
         data = self.df.merge(indicator_df, left_index=True, right_index=True)
 
-        sl_mult, tp_mult = self._calculate_dynamic_multipliers(data["ATR"], data["RSI"], data["BOLLINGER_PERCENT_B"])
+        sl_mult, tp_mult = self._calculate_dynamic_multipliers(
+            data["ATR"], data["RSI"], data["BOLLINGER_PERCENT_B"], data["MACD"], data["SIGNAL_LINE"]
+        )
 
         data["STOP_LOSS"] = np.where(
             data["POSITION"] == "SELL",
