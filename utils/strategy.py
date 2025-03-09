@@ -42,7 +42,7 @@ class TradeStrategy:
             pass
     """
 
-    def __init__(self, df: pd.DataFrame, reward_risk_ratio: float = 2.0):
+    def __init__(self, df: pd.DataFrame, symbol:str = 'EUR/USD', reward_risk_ratio: float = 2.0):
         """
         Initialize the strategy.
 
@@ -51,6 +51,7 @@ class TradeStrategy:
         """
         self.df = df.copy()
         self.reward_risk_ratio = reward_risk_ratio
+        self.symbol = symbol
         self.df["POSITION"] = np.where(self.df["PREDICTED_CLOSE"] > self.df["ENTRY_PRICE"], "BUY", "SELL")
 
     def _calculate_dynamic_multipliers(self, atr, rsi, bollinger_percent_b, macd, signal_line):
@@ -98,7 +99,33 @@ class TradeStrategy:
         )
 
         self.df = data[["ENTRY_PRICE", "PREDICTED_CLOSE", "POSITION", "STOP_LOSS", "TAKE_PROFIT"]]
+    
+    def _cac40_stop_loss_take_profit(self, indicator_df: pd.DataFrame):
+        """
+        Compute stop-loss and take-profit levels for CAC40 using fixed multipliers.
+        """
+        data = self.df.merge(indicator_df, left_index=True, right_index=True)
+        # Calculate stop-loss and take-profit based on MACD, ATR, and fixed pip values
+        sl_pip = np.where(data["MACD"] > data["SIGNAL_LINE"], 15, 10)
+        tp_pip = sl_pip * self.reward_risk_ratio
+
+        data["STOP_LOSS"] = np.where(
+            data["POSITION"] == "SELL",
+            data["PREDICTED_CLOSE"] + sl_pip,
+            data["PREDICTED_CLOSE"] - sl_pip
+        )
+        data["TAKE_PROFIT"] = np.where(
+            data["POSITION"] == "SELL",
+            data["PREDICTED_CLOSE"] - tp_pip,
+            data["PREDICTED_CLOSE"] + tp_pip
+        )
+        self.df = data[["ENTRY_PRICE", "PREDICTED_CLOSE", "POSITION", "STOP_LOSS", "TAKE_PROFIT"]]
 
     def run(self, indicator_df: pd.DataFrame):
         """Executes stop-loss and take-profit calculation."""
-        self._calculate_stop_loss_take_profit(indicator_df)
+        if self.symbol == 'EUR/USD':
+            self._calculate_stop_loss_take_profit(indicator_df)
+        elif self.symbol == 'CAC40':
+            self._cac40_stop_loss_take_profit(indicator_df)
+        else:
+            raise ValueError("Invalid symbol. Only 'EUR/USD' or 'CAC40' is supported.")
