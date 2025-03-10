@@ -167,7 +167,9 @@ class TreadingDataset:
         - close_field (str): The column name for which to calculate the EMA. Default is 'CLOSE'.
         - indicator_field_name (str): The name of the new column to store the EMA values. Default is 'EMA'.
         """
-        self.df[indicator_field_name] = self.df[close_field].ewm(span=span, adjust=False).mean()
+        data = self.df.copy()
+        data[indicator_field_name] = data[close_field].ewm(span=span, adjust=False).mean()
+        self.df = data
     
     def _calculate_macd(self, column:str=CLOSE_FIELD, extra_field:bool=False,
                        long_span:int=26, short_span:int=12, signal_span:int=9) -> None:

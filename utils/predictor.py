@@ -43,7 +43,10 @@ class PredictorToolkit:
         new_row = pd.DataFrame({
             'ENTRY_PRICE': entry_price, 'PREDICTED_CLOSE': predicted_price[0][0]
             }, index=[self.next_index])
-        self.predict_df = pd.concat([self.predict_df, new_row])
+        if not self.predict_df.empty:
+            self.predict_df = pd.concat([self.predict_df, new_row])
+        else:
+            self.predict_df = new_row
 
         return new_df
 
