@@ -2,9 +2,9 @@ import keras
 import numpy as np
 import pandas as pd
 from flask import Flask, request, jsonify
-from utils.agent_dataset import AgentTreadingDataset
+from utils.processing.v02.dataset import TradingDataset
 
-model:keras.Sequential = keras.models.load_model('./models/test/best_model_EURUSD.keras')
+model:keras.Sequential = keras.models.load_model('./models/test/best_model_EURUSD_candle.keras')
 app = Flask(__name__)
 
 
@@ -18,11 +18,10 @@ def predict():
     df = df.set_index('DATETIME')
     df = df.sort_index()
     # Sauvegarde en CSV
-    df.to_csv("market_data.csv")
+    # df.to_csv("pred_data.csv")
 
     # delete the last row
-    df = df[:-1]
-    dataset = AgentTreadingDataset(df)
+    dataset = TradingDataset(df)
     dataset.prepare_data()
 
     last_prev_lines:np.ndarray = dataset.feature_sequence[-1]
@@ -30,7 +29,22 @@ def predict():
     predicted_price_scaled = model.predict(prev_seq)
     predicted_price = dataset.target_scaler.inverse_transform(predicted_price_scaled)
 
-    return jsonify({"prediction": float(predicted_price)})  # Retourner la réponse en JSON
+    # create a route by timeframe, this route will be for hourly prediction
+    timeframe = df.index[-1] + pd.Timedelta(hours=1)
+
+
+    res_data = {
+        'DATETIME': timeframe.timestamp(),
+        "HIGH": float(predicted_price[0][0]),
+        "LOW": float(predicted_price[0][1]),
+        "CLOSE": float(predicted_price[0][2])
+    }
+
+    # Create a timeframe from the system's current date
+    current_time = pd.Timestamp.now()
+    current_time.timestamp
+    
+    return jsonify(res_data)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

@@ -41,3 +41,7 @@ MetaTrader5-auto-trading-bot/
 logs/
 lightning_logs/
 .DS_Store/
+
+# Remove backtest results
+Backtest/
+test.py
