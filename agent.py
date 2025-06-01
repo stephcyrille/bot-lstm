@@ -2,9 +2,14 @@ import keras
 import numpy as np
 import pandas as pd
 from flask import Flask, request, jsonify
+from tensorflow.keras.optimizers import Adam
 from utils.processing.v02.dataset import TradingDataset
 
-model:keras.Sequential = keras.models.load_model('./models/test/best_model_EURUSD_candle.keras')
+try:
+    model:keras.Sequential = keras.models.load_model('./models/test/best_model_EURUSD_candle_latest.keras')
+except Exception as e:
+    print(f"Error loading model: {e}")
+    model:keras.Sequential = keras.models.load_model('./models/test/best_model_EURUSD_candle.keras')
 app = Flask(__name__)
 
 
@@ -23,6 +28,19 @@ def predict():
     # delete the last row
     dataset = TradingDataset(df)
     dataset.prepare_data()
+    
+    X, y = dataset.feature_sequence, dataset.target_sequence
+    X, y = np.array(X), np.array(y)
+
+    for layer in model.layers[:-2]:  # keep last 2 layers trainable
+        layer.trainable = False
+
+    # Recompile the model
+    model.compile(optimizer=Adam(learning_rate=0.000001, weight_decay = 1e-5), loss='mse')
+    model.fit(X, y, epochs=10, batch_size=16)
+
+    # Save the model
+    model.save('./models/test/best_model_EURUSD_candle_latest.keras')
 
     last_prev_lines:np.ndarray = dataset.feature_sequence[-1]
     prev_seq = last_prev_lines.reshape(1, dataset.SEQUENCE_LENGTH, last_prev_lines.shape[1])
